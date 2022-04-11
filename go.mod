@@ -1,3 +1,3 @@
-module github.com/thinkty/go-react
+module github.com/thinkty/heroklock
 
 go 1.17

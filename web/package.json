@@ -1,13 +1,13 @@
 {
-  "name": "go-react",
+  "name": "heroklock",
   "version": "0.0.1",
   "author": "Tae Yoon Kim",
   "license": "MIT",
-  "description": "My version of CRA with TypeScript and Golang",
-  "homepage": "https://github.com/DuelItNinjas/go-react",
+  "description": "A simple application to keep your Heroku dyno alive!",
+  "homepage": "https://github.com/thinkty/heroklock",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DuelItNinjas/go-react.git"
+    "url": "https://github.com/thinkty/heroklock.git"
   },
   "scripts": {
     "lint": "eslint src/",
