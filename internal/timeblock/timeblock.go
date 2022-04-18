@@ -1,6 +1,7 @@
 package timeblock
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -21,24 +22,37 @@ func (timeblock Timeblock) String() string {
 }
 
 type Timeblocks struct {
-	Length uint64
-	Blocks []Timeblock
+	Length    uint64
+	Blocks    []Timeblock
+	Iteration uint
 }
 
 // Add a new timeblock to the list if it has a unique url
-func (timeblocks *Timeblocks) Add(url string, duration uint16, startTime time.Time) Timeblock {
+func (timeblocks *Timeblocks) Add(url string, duration uint16, startTime time.Time) (Timeblock, error) {
 	newTimeblock := Timeblock{Url: url, Duration: duration, StartTime: startTime}
 
-	// TODO: check if url is unique
+	// Check if url is unique
+	for _, timeblock := range timeblocks.Blocks {
+		if url == timeblock.Url {
+			return timeblock, errors.New("The given URL already exists in the list")
+		}
+	}
 
 	timeblocks.Blocks = append(timeblocks.Blocks, newTimeblock)
 	timeblocks.Length++
-	return newTimeblock
+	return newTimeblock, nil
+}
+
+// Add a new timeblock to the list with current time as start time
+func (timeblocks *Timeblocks) AddNow(url string, duration uint16) (Timeblock, error) {
+	return timeblocks.Add(url, duration, time.Now())
 }
 
 // Remove the timeblock with the given url from the list if it exists
 func (timeblocks *Timeblocks) Remove(url string) {
 	// TODO:
+
+	timeblocks.Length--
 }
 
 // Go through the list and return urls that are active
