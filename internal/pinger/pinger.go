@@ -3,6 +3,7 @@ package pinger
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/thinkty/heroklock/internal/timeblock"
@@ -21,9 +22,9 @@ func Start(timeblocks *timeblock.Timeblocks, interval time.Duration) {
 
 		validURLs := timeblocks.Check()
 
-		// TODO: send http request to all the urls
+		// Ping all the urls
 		for _, url := range validURLs {
-			log.Print(url)
+			go ping(url)
 		}
 	}
 }
@@ -38,6 +39,18 @@ func status(interval time.Duration, timeblocks *timeblock.Timeblocks) string {
 		log += fmt.Sprintf("%d min %d sec", interval/60, interval%60)
 	}
 
-	log += fmt.Sprintf(", Iteration: %d, Length: %d\n%s\n", timeblocks.Iteration, timeblocks.Length, timeblocks)
+	log += fmt.Sprintf(", Iteration: %d, Length: %d", timeblocks.Iteration, timeblocks.Length)
 	return log
+}
+
+// This does not actually ping the server as heroku servers don't have the
+// ability to handle ping by default. So, it just sends an HTTP GET request to
+// the given address
+func ping(url string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+
+	fmt.Printf("\t%s\t%s\n", url, resp.Status)
 }
