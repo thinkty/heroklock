@@ -101,6 +101,7 @@ func addRandom(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Tim
 	newTimeblock, err := timeblocks.AddNow(fmt.Sprintf("https://%s.herokuapp.com", string(randomUrl)), length)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	log.Printf("Added new timeblock\n\n%s\n", newTimeblock)
@@ -113,6 +114,20 @@ func addRandom(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Tim
 func removeFromList(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Timeblocks) {
 	log.Printf("%s %s %s %s%s", r.RemoteAddr, r.Proto, r.Method, r.Host, r.RequestURI)
 
-	// TODO:
+	if !r.URL.Query().Has("url") {
+		http.Error(w, "Request is missing url", http.StatusBadRequest)
+		return
+	}
 
+	url := r.URL.Query().Get("url")
+
+	success := timeblocks.Remove(url)
+	if !success {
+		http.Error(w, "Could not find any valid URL with the given URL", http.StatusBadRequest)
+		return
+	}
+
+	// Send the removed URL back as response
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(url))
 }
