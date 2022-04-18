@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/thinkty/heroklock/internal/pinger"
 	"github.com/thinkty/heroklock/internal/timeblock"
 )
 
@@ -18,10 +19,12 @@ func Start(port uint64, path string) {
 
 	// Initialize timeblocks
 	timeblocks := new(timeblock.Timeblocks)
+	timeblocks.Length = 0
+	timeblocks.Iteration = 0
 	timeblocks.Blocks = make([]timeblock.Timeblock, 0)
 
-	addr := fmt.Sprintf("localhost:%d", port)
-	log.Printf("Starting server at %s with files served from %s", addr, path)
+	interval := time.Duration(10) // in seconds
+	go pinger.Start(timeblocks, interval)
 
 	http.Handle("/", http.FileServer(http.Dir(path)))
 	http.HandleFunc("/list", func(w http.ResponseWriter, r *http.Request) { getList(w, r, timeblocks) })
@@ -30,11 +33,12 @@ func Start(port uint64, path string) {
 	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) { removeFromList(w, r, timeblocks) })
 
 	// Returns only on server error
-	log.Panic(http.ListenAndServe(addr, nil))
+	log.Printf("Starting server at port %d, files served from %s", port, path)
+	log.Panic(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
 
 func getList(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Timeblocks) {
-	log.Printf("%s %s %s", r.Method, r.Host, r.RequestURI)
+	log.Printf("%s %s %s %s%s", r.RemoteAddr, r.Proto, r.Method, r.Host, r.RequestURI)
 	log.Printf("Requested timeblocks\n%s", timeblocks)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -44,42 +48,47 @@ func getList(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Timeb
 // Parse the url, duration, and start time from the request and append to the list.
 // Respond with the newly added time block.
 func addToList(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Timeblocks) {
-	log.Printf("%s %s %s", r.Method, r.Host, r.RequestURI)
+	log.Printf("%s %s %s %s%s", r.RemoteAddr, r.Proto, r.Method, r.Host, r.RequestURI)
 
-	url, duration, startTime, err := verifyUrl(r.URL.Query())
-
+	url, duration, err := verifyUrl(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	newTimeblock := timeblocks.Add(url, duration, startTime)
+	url = "https://" + url + ".herokuapp.com"
+
+	newTimeblock, err := timeblocks.AddNow(url, duration)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// Respond with the newly added timeblock
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(newTimeblock)
 }
 
-// Check that all the properties exist in the parameter and parse it
-func verifyUrl(values url.Values) (string, uint16, time.Time, error) {
-	if values.Has("url") && values.Has("duration") && values.Has("startTime") {
+// Check that all the properties exist in the parameter and parse it.
+// URL (url) is the name of the heroku server it should ping.
+// Duration (duration) is the amount of time in 30 minutes it should ping for.
+func verifyUrl(values url.Values) (string, uint16, error) {
+	if values.Has("url") && values.Has("duration") {
 		duration, err := strconv.ParseUint(values.Get("duration"), 10, 16)
 
 		if err != nil {
-			return "", 0, time.Now(), errors.New("Failed to parse duration from request")
+			return "", 0, errors.New("Failed to parse duration from request")
 		}
 
-		startTime, err := time.Parse(time.RFC3339, values.Get("startTime"))
-
-		return values.Get("url"), uint16(duration), startTime, nil
+		return values.Get("url"), uint16(duration), nil
 
 	} else {
-		return "", 0, time.Now(), errors.New("Request is missing either url, duration or start time")
+		return "", 0, errors.New("Request is missing either url or duration")
 	}
 }
 
 func addRandom(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Timeblocks) {
-	log.Printf("%s %s %s", r.Method, r.Host, r.RequestURI)
+	log.Printf("%s %s %s %s%s", r.RemoteAddr, r.Proto, r.Method, r.Host, r.RequestURI)
 
 	const length = 8
 	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -89,7 +98,10 @@ func addRandom(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Tim
 		randomUrl[i] = letters[rand.Intn(len(letters))]
 	}
 
-	newTimeblock := timeblocks.Add(fmt.Sprintf("https://%s.com", string(randomUrl)), length, time.Now())
+	newTimeblock, err := timeblocks.AddNow(fmt.Sprintf("https://%s.herokuapp.com", string(randomUrl)), length)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
 	log.Printf("Added new timeblock\n\n%s\n", newTimeblock)
 
@@ -99,7 +111,8 @@ func addRandom(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Tim
 }
 
 func removeFromList(w http.ResponseWriter, r *http.Request, timeblocks *timeblock.Timeblocks) {
-	log.Printf("%s %s %s", r.Method, r.Host, r.RequestURI)
+	log.Printf("%s %s %s %s%s", r.RemoteAddr, r.Proto, r.Method, r.Host, r.RequestURI)
 
 	// TODO:
+
 }
