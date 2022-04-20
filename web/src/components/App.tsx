@@ -1,11 +1,13 @@
 import React from 'react';
+import { Footer } from './Footer';
+import { Form } from './Form';
 
 type Props = {
   message: string;
 } & typeof defaultProps;
 
 const defaultProps = {
-  message: 'Hello World!',
+  message: 'Heroklock',
 };
 
 export const App = (props: Props): JSX.Element => {
@@ -14,10 +16,11 @@ export const App = (props: Props): JSX.Element => {
       style={{
         width: '100vw',
         height: '100vh',
-        display: 'grid',
+        display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        font: 'caption',
+        fontFamily: 'Verdana, sans-serif',
         backgroundColor: 'black',
         color: 'white',
       }}
@@ -25,6 +28,10 @@ export const App = (props: Props): JSX.Element => {
       <h1>
         { props.message }
       </h1>
+      <Form
+        onSubmit={(url, dur) => { console.log(url, dur) }}
+      />
+      <Footer />
     </div>
   );
 }
