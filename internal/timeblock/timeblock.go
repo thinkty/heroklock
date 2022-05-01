@@ -18,7 +18,7 @@ func (timeblock Timeblock) String() string {
 	result += fmt.Sprintf("\turl:\t%s\n", timeblock.Url)
 	result += fmt.Sprintf("\tduration:\t%.2f hrs\n", float32(timeblock.Duration)/2)
 	result += fmt.Sprintf("\tstartTime:\t%s\n", timeblock.StartTime)
-	result += fmt.Sprintf("\tValid:\t%v\n", timeblock.Valid)
+	result += fmt.Sprintf("\tvalid:\t%v\n", timeblock.Valid)
 
 	return result
 }
