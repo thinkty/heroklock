@@ -20,14 +20,6 @@ export const TimeblockContainer = (props: Props): JSX.Element => {
 
   const [timeblocks, setTimeblocks] = React.useState<TimeblockType[]>([]);
 
-  const addNewTimeblockListener = (e: CustomEvent) => {
-    const newTimeblock : TimeblockType = e.detail;
-    console.log(newTimeblock);
-    
-
-    setTimeblocks(timeblocks.concat(newTimeblock));
-  }
-
   const fetchTimeblocks = () => {
     fetch('/list')
     .then((res) => res.json())
@@ -51,11 +43,11 @@ export const TimeblockContainer = (props: Props): JSX.Element => {
     const intervalId = setInterval(() => { fetchTimeblocks() }, props.interval);
 
     // Update the timeblocks on add new block
-    window.addEventListener(Event.NewBlock, addNewTimeblockListener as EventListener);
+    window.addEventListener(Event.NewBlock, fetchTimeblocks);
 
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener(Event.NewBlock, addNewTimeblockListener as EventListener)
+      window.removeEventListener(Event.NewBlock, fetchTimeblocks);
     };
   }, []);
 
@@ -66,11 +58,12 @@ export const TimeblockContainer = (props: Props): JSX.Element => {
   return (
     <div
       style={{
+        width: '50vw',
         maxHeight: '50vh',
         overflowY: 'auto',
         overflowX: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'column-reverse',
         padding: 10,
         border: 'double white',
       }}
