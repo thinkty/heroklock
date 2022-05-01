@@ -52,5 +52,7 @@ func ping(url string) {
 		return
 	}
 
+	defer resp.Body.Close()
+
 	fmt.Printf("\t%s\t%s\n", url, resp.Status)
 }
